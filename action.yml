@@ -1,0 +1,43 @@
+name: Stops a self-hosted EC2 runner
+description: Stops a self-hosted EC2 runner
+author: Rogi Solorzano
+inputs:
+  github-token:
+    description: >-
+      GitHub Personal Access Token with the 'repo' scope assigned.
+    required: true
+  runner-label:
+    description: >-
+      The label of the Github runner to remove.
+    required: true
+  instance-id:
+    description: >-
+      The instance ID of the EC2 instance to terminate.
+    required: true
+  cleanup-tag-name:
+    description: >-
+      Optionally cleanup any instances with a tag name and value.
+      This is useful to cleanup any dangling instances that might have
+      failed to be terminated in previous workflow runs for some reason.
+      With the github-runner-ec2-start action, you can specify a tag name and
+      value that you can use when cleaning up here.
+      Tag value is required if tag name is provided.
+    required: false
+  cleanup-tag-value:
+    description: >-
+      Optionally cleanup any instances with a tag name and value.
+      Tag name is required if tag value is provided.
+    required: false
+  cleanup-older-than-hours:
+    description: >-
+      Optionally cleanup instances that have been running for longer than x hours.
+      Tag name and value are required if this is provided.
+      This defaults to 1 hour.
+    required: false
+  region:
+    description: >-
+      The AWS region. Defaults to us-east-1
+    required: false
+runs:
+  using: node16
+  main: dist/index.js
