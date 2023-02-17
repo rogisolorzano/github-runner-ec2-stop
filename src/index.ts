@@ -1,9 +1,4 @@
-import {
-  EC2Client,
-  TerminateInstancesCommand,
-  waitUntilInstanceTerminated,
-  DescribeInstancesCommand,
-} from '@aws-sdk/client-ec2';
+import { EC2Client, TerminateInstancesCommand, DescribeInstancesCommand } from '@aws-sdk/client-ec2';
 import { error, setFailed, info } from '@actions/core';
 import { getOctokit, context } from '@actions/github';
 import { config } from './config';
@@ -24,15 +19,6 @@ async function terminateEc2Instance(instanceId: string) {
       InstanceIds: [instanceId],
     });
     await ec2Client.send(command);
-    await waitUntilInstanceTerminated(
-      {
-        client: ec2Client,
-        maxWaitTime: 120,
-      },
-      {
-        InstanceIds: [instanceId],
-      }
-    );
   } catch (err: unknown) {
     error('An error occurred while terminating the EC2 instance.');
     throw err;
@@ -57,6 +43,10 @@ async function cleanupEc2Instances(tagName: string, tagValue: string) {
           Name: `tag:${tagName}`,
           Values: [tagValue],
         },
+        {
+          Name: 'instance-state-name',
+          Values: ['running'],
+        },
       ],
     });
     const response = await ec2Client.send(describeCommand);
@@ -71,7 +61,7 @@ async function cleanupEc2Instances(tagName: string, tagValue: string) {
       .filter((id): id is string => !!id);
 
     if (!instanceIds || instanceIds.length === 0) {
-      info('Found no instances that need to be terminated.');
+      info('Found no dangling instances that need to be terminated.');
       return;
     }
 
@@ -79,6 +69,7 @@ async function cleanupEc2Instances(tagName: string, tagValue: string) {
       InstanceIds: instanceIds,
     });
     await ec2Client.send(terminateCommand);
+    info(`Cleaned up ${instanceIds.length} dangling instances.`);
   } catch (err: unknown) {
     error('An error occurred while cleaning up EC2 instances.');
     throw err;
